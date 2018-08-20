@@ -1,0 +1,82 @@
+---
+title: "Multivariate Analysis"
+author: "Vijay S"
+date: "6 March 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+stocks = read.csv("Correlation.csv")
+library(dplyr)
+```
+
+```{r}
+colnames(m)=c("Height","Weight","Age","Salary")
+m = matrix(data = c(5,10,15,5,10,15,20,40,60,5000,10000,20000),3,4,byrow = F)
+m
+```
+
+```{r}
+cor_m = cor(m)
+cor_m
+```
+```{r}
+e = eigen(cor_m)
+e$values
+```
+```{r}
+e = eigen(cor(stocks %>% select(-Date,-Samsung)))
+e$values
+```
+
+# Step: 1 - Find mean and remove or set the mean on each column to zero
+```{r}
+# Example
+x = stocks$Google
+sample_mean = mean(stocks$Google)
+x_demean = x - sample_mean
+x_demean
+plot(x_demean)
+```
+# Step: 2 - Set the Standard Deviation to 1
+```{r}
+# Example
+x = stocks$Google
+sample_mean = mean(stocks$Google)
+x_demean = x - sample_mean
+x_std = x_demean / sd(x_demean)
+sd(x_std)
+plot(x_std)
+```
+# The above two steps are done using a single function
+```{r}
+x_std = scale(x)
+?scale()
+```
+
+```{r}
+stocks_std = scale(stocks %>% select(-Date,-Samsung))
+View(stocks_std)
+sd(stocks_std[,3])
+
+e = eigen(cor(stocks_std))
+e$values
+```
+# Principal Component Analysis
+```{r}
+pcs = stocks_std %*% e$vectors
+dim(stocks_std)
+View(as.data.frame(pcs))
+
+for (i in seq(1:dim(pcs)[2])) {
+  print(var(pcs[,i]))
+}
+
+View(cor(pcs))
+```
+
+```{r}
+plot(cumsum(e$values/sum(e$values)*100),type = "l")
+```
+

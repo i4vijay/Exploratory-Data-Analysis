@@ -1,0 +1,165 @@
+---
+title: "Bank Full Analysis"
+author: "Vijay S"
+date: "27 February 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(utils)
+library(corrplot)
+bankf <- read.csv("bank-full.csv",sep = ';')
+View(bankf)
+```
+
+# Bivariate Analysis
+## - Crosstab Analysis  
+### - To identofy the relation between two catagorical columns
+
+```{r}
+table(bankf$job,bankf$education)
+```
+
+```{r}
+job_edu <- as.data.frame(table(bankf$job,bankf$education))
+head(job_edu)
+names(job_edu) = c("Job","Education","Frequency")
+```
+```{r}
+ggplot(job_edu,aes(x=Education,y=Job)) + geom_point()
+```
+
+```{r}
+ggplot(job_edu,aes(x=Education,y=Job,size=Frequency,color=Frequency)) + geom_point()
+```
+
+```{r}
+table(bankf$job,bankf$marital)
+job_mar <- as.data.frame(table(bankf$job,bankf$marital))
+View(job_mar)
+names(job_mar) = c("Job","Marital","Frequency")
+ggplot(job_mar,aes(x=Job,y=Marital,size=Frequency,color=Frequency)) + geom_point() + coord_flip()
+```
+
+```{r}
+job_mar1=as.data.frame(table(bankf$job,cut(bankf$balance,breaks = 5,
+                                           labels = c("Group 1","Group 2","Group 3","Group 4","Group 5"))))
+names(job_mar1) = c("Job","Balance_Group","Frequency")
+View(job_mar1)
+ggplot(job_mar1,aes(x=Balance_Group,y=Job,size=Frequency,color=Frequency)) + geom_point()
+```
+```{r}
+ggplot(job_mar1,aes(x=Balance_Group,y=Job,fill=-Frequency)) + geom_tile()
+```
+
+## Chi Square Test
+### H0 -> groups are independent
+### H1 -> they are dependent
+```{r}
+chisq.test(bankf$job,bankf$education)
+```
+## Step - 1
+### To find factor columns in a dataset
+```{r}
+get_factor <- function(x){
+  v=c()
+  for (i in 1:ncol(x)) {
+   if(is.factor(x[,i]))
+    v = append(v,names(x)[i])
+  }
+  return(v)
+}
+get_factor(bankf)   
+
+# To find factor columns in a dataset
+get_factors = function(df){
+  v = sapply(df,is.factor)
+  return(names(df)[v])
+}
+get_factors(bankf)
+```
+## Step - 2
+### To find all the combination of factor columns
+```{r}
+factors_comb=combn(get_factors(bankf),2,simplify = F)
+factors_comb
+factors_comb[[1]][1]
+```
+## Step - 3
+### Loop through each combination
+```{r}
+for (comb in factors_comb) {
+  #print(combn)
+  chi_res = chisq.test(bankf[,comb[1]], bankf[,comb[2]])
+  #print(c(comb[1],comb[2],chi_res$p.value))
+  if(chi_res$p.value < 0.05){
+    print(comb)
+  }
+}
+
+for (comb in factors_comb) {
+  chi_res = chisq.test(bankf[,comb[1]], bankf[,comb[2]])
+  print(c(comb[1],comb[2],chi_res$p.value))
+}
+```
+## Automate Correlation Analysis
+#### Step - 1 Identify numerical column
+#### Step - 2 Get combinations
+#### Step - 3 For each combinations get correlation value
+#### Step - 4 Filter only those combination whose abs value is > 0.75
+#### Step - 5 Sort the result based on abs value
+
+###### Function to calculate correlation analysis
+```{r}
+Corr_Analysis <- function(x){
+  a=sapply(x, is.numeric)
+  x=na.omit(x)
+  numeric_comb <- combn(names(x)[a],2,simplify = F)
+  i=1
+  v1=c()
+  for (comb in numeric_comb) {
+    corr_anal = cor(x[,comb[1]], x[,comb[2]])
+    
+    if(abs(corr_anal) > 0.075){
+      v1$num1[i] = as.character(comb[1])
+      v1$num2[i] = as.character(comb[2])
+      v1$abs.value[i] = abs(corr_anal)
+      i=i+1
+    }
+  }
+  v1=data.frame(v1,stringsAsFactors = F)
+  return(v1 %>% arrange(-abs.value))
+}
+Corr_Analysis(bankf)
+
+```
+```{r}
+modi = read.csv("narendramodi_tweets.csv")
+View(bankf)
+```
+```{r}
+q1 = quantile(bankf$duration, 0.25, na.rm = T)
+q2 = quantile(bankf$duration, 0.5, na.rm = T)
+q3 = quantile(bankf$duration, 0.75, na.rm = T)
+val_2per = quantile(bankf$duration,0.02,na.rm = T)
+val_98per = quantile(bankf$duration,0.98,na.rm = T)
+print(c(q1, q2, q3))
+iqr = q3-q1
+iqr
+lw = q1 - 1.5 * iqr
+uw = q3 + 1.5 * iqr
+print(c(lw,uw,val_2per,val_98per))
+
+outlier = bankf %>% filter((duration<lw) | (duration>uw)) %>% arrange(-duration)
+outlier
+nrow(outlier) / sum(!is.na(bankf$duration))*100
+
+```
+
+```{r}
+bankf %>% group_by(bankf$y)
+```
+

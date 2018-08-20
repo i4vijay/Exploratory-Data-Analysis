@@ -1,0 +1,49 @@
+---
+title: "EDA next class after 11"
+author: "Vijay S"
+date: "26 February 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+par = read.csv("E:/PGDDS/R Pgm/EDA/EDA_Datasets/parliament.csv")
+```
+
+# Class exercise with parliment dataset
+# For the year 2009
+```{r}
+View(par)
+exe <- par %>% filter(YEAR == 2009) %>% group_by(STATE,PC) %>% summarise(Count = n())
+boxplot(exe$Count)
+q1 = quantile(exe$Count, 0.25, na.rm = T)
+q2 = quantile(exe$Count, 0.5, na.rm = T)
+q3 = quantile(exe$Count, 0.75, na.rm = T)
+val_2per = quantile(exe$Count,0.02,na.rm = T)
+val_98per = quantile(exe$Count,0.98,na.rm = T)
+print(c(q1, q2, q3,val_2per,val_98per))
+iqr = q3-q1
+iqr
+lw = q1 - 1.5 * iqr
+uw = q3 + 1.5 * iqr
+print(c(lw,uw,val_2per,val_98per))
+
+outlier = exe %>% filter((Count<lw) | (Count>uw)) %>% arrange(-Count)
+outlier
+nrow(outlier) / sum(!is.na(exe$Count))*100
+
+exe %>% filter(Count>30) %>% group_by(STATE) %>% summarise(STATE_Count = n()) %>% arrange(-STATE_Count)
+
+```
+
+# For the year 2004
+```{r}
+exe_1 <- par %>% filter(YEAR == 2004) %>% group_by(STATE,PC) %>% summarise(Count = n())
+exe_1
+boxplot(exe_1$Count)
+exe_1 %>% filter(Count>23.5) %>% group_by(STATE) %>% summarise(STATE_Count = n()) %>% arrange(-STATE_Count)
+```
+

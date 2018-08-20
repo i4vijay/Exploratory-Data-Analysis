@@ -1,0 +1,69 @@
+---
+title: "Missing value treatment"
+author: "Vijay S"
+date: "13 March 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(zoo)
+library(VIM)
+library(mice)
+```
+
+### Filling the NA with previous values to NA
+```{r}
+x = c(1,2,3,4,5,NA,7,8,NA,10)
+x
+na.locf(x)
+```
+### Filling the NA with next value to NA
+```{r}
+na.locf(x,fromLast = T)
+```
+### Interpolation Method
+```{r}
+na.approx(x)
+```
+
+```{r}
+plot(na.spline(x),type = "l")
+plot(na.approx(x),type = "l")
+```
+```{r}
+library(dplyr)
+stocks = read.csv("Correlation.csv")
+par = read.csv("parliament.csv")
+odi = read.csv("odi-batting.csv")
+```
+
+```{r}
+aggr(stocks)
+```
+```{r}
+aggr(par)
+```
+```{r}
+aggr(odi)
+
+```
+
+```{r}
+library(hflights)
+z=aggr(hflights)
+z$percent
+dim(hflights)
+```
+
+```{r}
+stocks_imputed = complete(mice(stocks))
+dim(stocks_imputed)
+View(stocks_imputed)
+```
+
+```{r}
+z = c(10, 59, 63, NA, 50, 40)
+na.approx(z)
+```
+

@@ -1,0 +1,92 @@
+---
+title: "Correlation Analysis"
+author: "Vijay S"
+date: "26 February 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(sqldf)
+install.packages("corrplot")
+install.packages("sqldf")
+library(corrplot)
+stocks = read.csv("Correlation.csv")
+View(stocks)
+```
+
+# Use of Correlation Analysis on scatter plot
+## For trending analysis
+## Outliers
+## Groups
+
+```{r}
+corr_matrix = cor(stocks %>% select(-Date))
+corrplot(corr_matrix)
+?corrplot()
+```
+```{r}
+corr_matrix_1 = cor(stocks %>% select(-Date,-Samsung))
+corrplot(corr_matrix_1,method = 'color', type = 'lower',order = 'hclust', addrect = 3)
+```
+
+```{r}
+corrplot(corr_matrix_1,method = 'color',order = 'hclust', addrect = 3)
+```
+```{r}
+ggplot(stocks,aes(x=Amazon,y=Google)) + geom_point() + geom_smooth()
+```
+
+```{r}
+ggplot(stocks,aes(x=Amazon,y=Samsung)) + geom_point() + geom_smooth()
+```
+
+```{r}
+ggplot(stocks,aes(x=Amazon,y=Infosys)) + geom_point() + geom_smooth()
+```
+
+# Bivariate Analysis
+## Correlation - (2 Numerical COlumns)
+## Crosstab - (2 group/categorical columns)
+## Segmental Anlysis - (1 group/categorical + 1 numerical columns)
+```{r}
+modi <- read.csv("narendramodi_tweets.csv")
+View(modi)
+
+ggplot(modi, aes(x=favorite_count,y=retweets_count)) + geom_point() + geom_smooth()
+```
+```{r}
+boxplot(modi$favorite_count)
+```
+```{r}
+boxplot(modi$retweets_count)
+```
+
+```{r}
+odi_1 <- read.csv("odi-batting.csv")
+sac <- odi_1 %>% filter(Player == 'Sachin R Tendulkar') %>% 
+       group_by(Runs,ScoreRate) %>% 
+       ggplot(aes(x=Runs,y=ScoreRate)) + geom_point() + geom_smooth() 
+sac
+```
+
+```{r}
+odi_1 %>% filter(Player == 'Virender Sehwag') %>% 
+       group_by(Runs,ScoreRate) %>% 
+       ggplot(aes(x=Runs,y=ScoreRate)) + geom_point() + geom_smooth()
+```
+```{r}
+odi_1 %>% group_by(Country) %>% 
+          summarise(Runs = sum(Runs,na.rm = T),ScoreRate = mean(ScoreRate,na.rm = T)) %>% 
+          ggplot(aes(x=Runs,y=ScoreRate,color=Country)) + geom_point() + geom_smooth(color='red')
+```
+
+```{r}
+sqldf("select sum(Runs) from odi_1 where Player = 'Sachin R Tendulkar'")
+```
+

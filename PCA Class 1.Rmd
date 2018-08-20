@@ -1,0 +1,135 @@
+---
+title: "PCA"
+author: "Vijay S"
+date: "12 March 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+xc <- 1 # center x_c or h
+yc <- 2 # y_c or k
+a <- 5 # major axis length
+b <- 2 # minor axis length
+phi <- pi/3 # angle of major axis with x axis phi or tau
+
+t <- seq(0,2*pi, 0.01)
+x <- xc + a*cos(t)*cos(phi) - b*sin(t)*sin(phi)
+y <- yc + a*cos(t)*cos(phi) + b*sin(t)*cos(phi)
+plot(x,y,pch = 19,col = 'blue')
+```
+
+```{r}
+df = data.frame(x=x,y=y)
+View(df)
+
+# Scaling the data
+df_scale = scale(df)
+sd(df_scale[,2])
+
+# eigen values and vectors
+e = eigen(cor(df_scale))
+e$values
+e$vectors
+
+# PCs
+pcs = df_scale %*% e$vectors
+plot(pcs[,1],pcs[,2])
+```
+
+```{r}
+diff(range(df_scale[,1]))
+diff(range(pcs[,1]))
+
+plot(df_scale[,1], df_scale[,2])
+plot(pcs[,1],pcs[,2])
+```
+# Case 1 : Setting pc2 = 0
+```{r}
+pcs_case1 = pcs
+pcs_case1[,2] = 0
+
+df_rec1 = pcs_case1 %*% t(e$vectors)
+plot(df_scale[,1],df_scale[,2])
+plot(df_rec1[,1],df_rec1[,2])
+
+#or
+{{plot(df_scale[,1],df_scale[,2])
+  lines(df_rec1[,1],df_rec1[,2],col = 'red')}}
+```
+# Case 2 : Setting pc1 = 0
+```{r}
+pcs_case2 = pcs
+pcs_case2[,1] = 0
+
+df_rec2 = pcs_case2 %*% t(e$vectors)
+{{plot(df_scale[,1],df_scale[,2])
+  lines(df_rec2[,1],df_rec2[,2],col = 'red')}}
+```
+
+```{r}
+df_sub = df_scale - df_rec1
+plot(df_sub)
+View(df_sub)
+```
+
+```{r}
+x = seq(1,100)
+y = x + runif(100,1,50)
+plot(x,y,type = "l")
+
+df_scale = scale(data.frame(x=x, y=y))
+pcs = df_scale %*% eigen(cor(df_scale))$vectors
+
+pcs_case1 = pcs
+pcs_case1[,2] = 0
+df_rec1 = pcs_case1 %*% t(eigen(cor(df_scale))$vectors)
+{{plot(df_scale)
+  lines(df_rec1, col = 'red')}}
+
+error = df_scale[,2] - df_rec1[,2]
+plot(error)
+
+plot(df_scale - df_rec1)
+```
+# PCA Steps
+ - 1. Scale your data
+    - Mean = 0,
+    - Standard Deviation = 1
+ - 2. Compute your correlation or covariance
+ - 3. Calculate your eigen values and eigen vectors
+ - 4. Matrix multiplication between your scaled data and eigen vectors
+ - 5. Plot your cumulative variance curve to determine how many PCs to choose to retain 95% of the variance in the data
+ -6. Pass the retained PCs to your machine learning algorithm
+```{r}
+stocks = read.csv("Correlation.csv")
+library(dplyr)
+stocks_sub = stocks %>% select(-Date, - Samsung)
+dim(stocks_sub) # 10 input variables
+
+pcs = prcomp(stocks_sub, scale. = T)
+
+names(pcs)
+
+View(pcs$x) # Principal Components
+
+View(pcs$rotation) # Eigen Vectors
+
+pcs$sdev # Square root of eigen values
+
+pcs$scale # Standard deviation of input data before scaling
+
+pcs$center # Mean of input variables
+plot(pcs)
+```
+```{r}
+screeplot(pcs,type = "l")
+```
+ 
+```{r}
+plot(cumsum(pcs$sdev / sum(pcs$sdev) * 100),type = "l")
+```
+
